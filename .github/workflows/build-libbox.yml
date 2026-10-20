@@ -20,7 +20,7 @@ on:
         default: android
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -147,3 +147,13 @@ jobs:
             sing-box/libbox-legacy.aar
           if-no-files-found: error
           retention-days: 7
+
+      # 公开仓库的 Release 资产可匿名下载，便于本机直接取回 AAR。
+      - name: 发布到 Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="libbox-${SINGBOX_REF}"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "libbox ${SINGBOX_REF}" --notes "自动构建：sing-box ${SINGBOX_REF}，NDK r28，16 KB 页对齐。"
+          gh release upload "$TAG" sing-box/libbox.aar sing-box/libbox-legacy.aar --clobber --repo "$GITHUB_REPOSITORY"
